@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeBack Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #0f1629;
+            --bg-card: rgba(15, 23, 42, 0.7);
+            --bg-card-hover: rgba(20, 30, 55, 0.8);
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.12);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #475569;
+            --accent-blue: #3b82f6;
+            --accent-blue-glow: rgba(59, 130, 246, 0.15);
+            --accent-emerald: #10b981;
+            --accent-emerald-glow: rgba(16, 185, 129, 0.15);
+            --accent-amber: #f59e0b;
+            --accent-amber-glow: rgba(245, 158, 11, 0.15);
+            --accent-rose: #f43f5e;
+            --accent-rose-glow: rgba(244, 63, 94, 0.15);
+            --accent-purple: #a855f7;
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app { position: relative; z-index: 1; }
+
+        /* ─── Top Bar ─── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 16px;
+            color: white;
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            box-shadow: 0 0 8px var(--accent-emerald);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .status-dot.offline { background: var(--text-muted); box-shadow: none; animation: none; }
+        .status-dot.loading { background: var(--accent-amber); box-shadow: 0 0 8px var(--accent-amber); }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-icon:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        /* ─── Controls Bar ─── */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            background: rgba(15, 22, 41, 0.5);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .date-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="date"] {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="date"]:focus {
+            border-color: var(--accent-blue);
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+        }
+
+        .presets {
+            display: flex;
+            gap: 6px;
+            margin-left: 8px;
+        }
+
+        .preset-btn {
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .preset-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+        .preset-btn.active {
+            background: var(--accent-blue-glow);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-pull {
+            padding: 8px 24px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        .btn-pull:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.35);
+        }
+        .btn-pull:active { transform: translateY(0); }
+        .btn-pull:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-pull svg { transition: transform 0.3s; }
+        .btn-pull.loading svg { animation: spin 1s linear infinite; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── Main Content ─── */
+        .main { padding: 24px 32px; }
+
+        /* ─── Summary Cards ─── */
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .summary-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .summary-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .summary-value {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .summary-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .summary-card.blue .summary-value { color: var(--accent-blue); }
+        .summary-card.emerald .summary-value { color: var(--accent-emerald); }
+        .summary-card.amber .summary-value { color: var(--accent-amber); }
+        .summary-card.purple .summary-value { color: var(--accent-purple); }
+        .summary-card.blue { box-shadow: inset 0 1px 0 var(--accent-blue-glow); }
+        .summary-card.emerald { box-shadow: inset 0 1px 0 var(--accent-emerald-glow); }
+        .summary-card.amber { box-shadow: inset 0 1px 0 var(--accent-amber-glow); }
+        .summary-card.purple { box-shadow: inset 0 1px 0 rgba(168,85,247,0.15); }
+
+        /* ─── Day Tabs (weekly view) ─── */
+        .day-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .day-tab {
+            padding: 12px 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.25s;
+            white-space: nowrap;
+            font-family: inherit;
+            min-width: 120px;
+            text-align: center;
+        }
+        .day-tab:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card-hover);
+        }
+        .day-tab.active {
+            background: var(--accent-blue-glow);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .day-tab-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .day-tab-xp {
+            font-size: 11px;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        /* ─── Student Grid ─── */
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .student-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .student-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .student-card.flag-red { border-left: 3px solid var(--accent-rose); }
+        .student-card.flag-yellow { border-left: 3px solid var(--accent-amber); }
+        .student-card.flag-green { border-left: 3px solid var(--accent-emerald); }
+        .student-card.flag-absent {
+            border-left: 3px solid var(--accent-rose);
+            background: rgba(244, 63, 94, 0.06);
+            position: relative;
+        }
+        .absent-banner {
+            background: rgba(244, 63, 94, 0.12);
+            color: var(--accent-rose);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        .student-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .student-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .student-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-xp {
+            background: var(--accent-blue-glow);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .badge-acc {
+            border: 1px solid;
+        }
+        .badge-acc.good {
+            background: var(--accent-emerald-glow);
+            color: var(--accent-emerald);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+        .badge-acc.warn {
+            background: var(--accent-rose-glow);
+            color: var(--accent-rose);
+            border-color: rgba(244, 63, 94, 0.2);
+        }
+        .badge-min {
+            border: 1px solid;
+        }
+        .badge-min.good {
+            background: rgba(168, 85, 247, 0.12);
+            color: var(--accent-purple);
+            border-color: rgba(168, 85, 247, 0.2);
+        }
+        .badge-min.warn {
+            background: var(--accent-amber-glow);
+            color: var(--accent-amber);
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .student-subjects {
+            padding: 12px 20px 16px;
+        }
+
+        .subject-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            gap: 12px;
+        }
+        .subject-row:last-child { border-bottom: none; }
+        .subject-row.no-data { opacity: 0.3; }
+
+        .subject-name {
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 110px;
+            color: var(--text-secondary);
+        }
+
+        .subject-metrics {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .metric-bar {
+            width: 60px;
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .metric-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .metric-bar-fill.blue { background: var(--accent-blue); }
+        .metric-bar-fill.emerald { background: var(--accent-emerald); }
+        .metric-bar-fill.amber { background: var(--accent-amber); }
+        .metric-bar-fill.rose { background: var(--accent-rose); }
+        .metric-bar-fill.purple { background: var(--accent-purple); }
+
+        .metric-value {
+            font-weight: 600;
+            min-width: 32px;
+            text-align: right;
+        }
+        .metric-value.good { color: var(--accent-emerald); }
+        .metric-value.warn { color: var(--accent-rose); }
+        .metric-value.low-min { color: var(--accent-amber); }
+
+        .metric-unit {
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        /* ─── Weekly Trends ─── */
+        .trends-section {
+            margin-top: 8px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .trends-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .trend-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .trend-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .trend-panel.alert .trend-panel-header {
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.06), rgba(245, 158, 11, 0.04));
+            color: var(--accent-rose);
+        }
+
+        .trend-panel.success .trend-panel-header {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(59, 130, 246, 0.04));
+            color: var(--accent-emerald);
+        }
+
+        .trend-panel-body {
+            padding: 16px 20px;
+        }
+
+        .trend-category {
+            margin-bottom: 16px;
+        }
+        .trend-category:last-child { margin-bottom: 0; }
+
+        .trend-category-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .trend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: var(--bg-glass);
+            margin-bottom: 6px;
+            transition: background 0.2s;
+        }
+        .trend-item:hover { background: rgba(255,255,255,0.04); }
+
+        .trend-item-name {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .trend-item-value {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .trend-item-value.alert { color: var(--accent-rose); }
+        .trend-item-value.warn { color: var(--accent-amber); }
+        .trend-item-value.good { color: var(--accent-emerald); }
+        .trend-item-value.blue { color: var(--accent-blue); }
+
+        /* ─── Empty State ─── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* ─── Modal ─── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            width: 440px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .modal-close:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+        .modal-body {
+            padding: 20px 24px;
+        }
+
+        .student-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: var(--bg-glass);
+            margin-bottom: 6px;
+            transition: background 0.2s;
+        }
+        .student-list-item:hover { background: rgba(255,255,255,0.04); }
+
+        .student-list-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-remove {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-remove:hover { background: var(--accent-rose-glow); color: var(--accent-rose); }
+
+        /* ─── Group Tabs ─── */
+        .group-tabs-bar {
+            display: flex;
+            gap: 6px;
+            padding: 0 32px 12px;
+            overflow-x: auto;
+            align-items: center;
+        }
+        .group-tab {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .group-tab:hover { border-color: var(--border-hover); color: var(--text-primary); }
+        .group-tab.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+        .group-tab-manage {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px dashed var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .group-tab-manage:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        /* ─── Group Modal ─── */
+        .modal-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-family: inherit;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        .modal-tab:hover { color: var(--text-secondary); }
+        .modal-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .modal-section { display: none; }
+        .modal-section.active { display: block; }
+
+        .group-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        .group-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .group-card-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .group-card-count {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .group-card-students {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .group-student-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3px 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .group-student-chip .chip-remove {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1;
+        }
+        .group-student-chip .chip-remove:hover { color: var(--accent-rose); }
+
+        .new-group-form {
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .new-group-form input, .new-group-form select {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            margin-bottom: 8px;
+        }
+        .new-group-form input:focus { border-color: var(--accent-blue); }
+        .new-group-form input::placeholder { color: var(--text-muted); }
+
+        .student-checkbox-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .student-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.15s;
+        }
+        .student-checkbox-item:hover { background: rgba(255,255,255,0.03); }
+        .student-checkbox-item input[type="checkbox"] {
+            accent-color: var(--accent-blue);
+        }
+
+        .add-student-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .add-student-row input {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+        .add-student-row input:focus { border-color: var(--accent-blue); }
+        .add-student-row input::placeholder { color: var(--text-muted); }
+
+        .btn-add {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            background: var(--accent-blue);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .btn-add:hover { background: #2563eb; }
+
+        /* ─── Loading Overlay ─── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 26, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 150;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .loading-overlay.show { display: flex; }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .loading-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ─── Animations ─── */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease forwards; }
+
+        .student-card { animation: fadeIn 0.4s ease forwards; opacity: 0; }
+        .student-card:nth-child(1) { animation-delay: 0s; }
+        .student-card:nth-child(2) { animation-delay: 0.05s; }
+        .student-card:nth-child(3) { animation-delay: 0.1s; }
+        .student-card:nth-child(4) { animation-delay: 0.15s; }
+        .student-card:nth-child(5) { animation-delay: 0.2s; }
+        .student-card:nth-child(6) { animation-delay: 0.25s; }
+
+        /* ─── Scrollbar ─── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        @media (max-width: 900px) {
+            .summary-row { grid-template-columns: repeat(2, 1fr); }
+            .student-grid { grid-template-columns: 1fr; }
+            .trends-grid { grid-template-columns: 1fr; }
+            .controls { padding: 12px 16px; }
+            .main { padding: 16px; }
+            .topbar { padding: 12px 16px; }
+        }
+
+        /* ─── Chat Panel ─── */
+        .chat-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: white;
+            cursor: pointer;
+            z-index: 260;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 24px rgba(59, 130, 246, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .chat-fab:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 32px rgba(59, 130, 246, 0.5);
+        }
+        .chat-fab.hidden { display: none; }
+
+        .chat-panel {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 400px;
+            height: 500px;
+            z-index: 260;
+            background: rgba(15, 22, 41, 0.92);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-hover);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .chat-panel.open {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .chat-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .chat-header-title {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-header-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+        }
+        .chat-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .chat-close:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 0 16px 12px;
+        }
+        .chat-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-hover);
+            background: var(--bg-glass);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chat-chip:hover {
+            background: var(--accent-blue-glow);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--accent-blue);
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .chat-bubble.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.assistant {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-area {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .chat-input {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .chat-input:focus { border-color: var(--accent-blue); }
+        .chat-input::placeholder { color: var(--text-muted); }
+
+        .chat-send {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent-blue);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .chat-send:hover { background: #2563eb; }
+
+        @media (max-width: 480px) {
+            .chat-panel {
+                width: calc(100vw - 16px);
+                height: calc(100vh - 80px);
+                bottom: 8px;
+                right: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="logo">TB</div>
+            <span class="app-title">TimeBack Dashboard</span>
+        </div>
+        <div class="topbar-right">
+            <span class="timestamp" id="timestamp"></span>
+            <div class="status-dot" id="statusDot" title="Connected"></div>
+            <button class="btn-icon" onclick="openModal()" title="Manage Students">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </button>
+            <button class="btn-icon" onclick="openSettings()" title="Settings">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="date-group">
+            <span class="date-label">From</span>
+            <input type="date" id="dateFrom">
+        </div>
+        <div class="date-group">
+            <span class="date-label">To</span>
+            <input type="date" id="dateTo">
+        </div>
+        <div class="presets">
+            <button class="preset-btn" onclick="setPreset('today', this)">Today</button>
+            <button class="preset-btn" onclick="setPreset('week', this)">This Week</button>
+            <button class="preset-btn" onclick="setPreset('last', this)">Last Week</button>
+        </div>
+        <button class="btn-pull" id="btnPull" onclick="pullData()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Pull Data
+        </button>
+    </div>
+
+    <!-- Group Tabs -->
+    <div class="group-tabs-bar" id="groupTabsBar"></div>
+
+    <!-- Main Content -->
+    <div class="main" id="mainContent">
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">&#9685;</div>
+            <div class="empty-title">No data yet</div>
+            <div>Select a date and pull data to get started</div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat FAB -->
+<button class="chat-fab" id="chatFab" onclick="toggleChat()" title="Data Assistant">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+</button>
+
+<!-- Chat Panel -->
+<div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+        <span class="chat-header-title"><span class="chat-header-dot"></span> Data Assistant</span>
+        <button class="chat-close" onclick="toggleChat()">&times;</button>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-suggestions" id="chatSuggestions">
+        <button class="chat-chip" onclick="sendChat('Lowest accuracy?')">Lowest accuracy?</button>
+        <button class="chat-chip" onclick="sendChat('Who needs help?')">Who needs help?</button>
+        <button class="chat-chip" onclick="sendChat('Best performer?')">Best performer?</button>
+        <button class="chat-chip" onclick="sendChat('Weekly summary')">Weekly summary</button>
+    </div>
+    <div class="chat-input-area">
+        <input class="chat-input" id="chatInput" type="text" placeholder="Ask about student data..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" onclick="sendChat()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Pulling metrics from TimeBack...</div>
+    <div class="loading-sub" id="loadingSub">Agents are working in background tabs</div>
+</div>
+
+<!-- Student / Groups Modal -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">Manage</span>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-tabs">
+            <button class="modal-tab active" onclick="switchModalTab('students', this)">Students</button>
+            <button class="modal-tab" onclick="switchModalTab('groups', this)">Groups</button>
+        </div>
+        <div class="modal-body">
+            <!-- Students Section -->
+            <div class="modal-section active" id="modalStudents">
+                <div id="studentList"></div>
+                <div class="add-student-row">
+                    <input type="text" id="newStudentInput" placeholder="Enter student name..." onkeydown="if(event.key==='Enter')addStudent()">
+                    <button class="btn-add" onclick="addStudent()">Add</button>
+                </div>
+            </div>
+            <!-- Groups Section -->
+            <div class="modal-section" id="modalGroups">
+                <div id="groupList"></div>
+                <div class="new-group-form" id="newGroupForm">
+                    <input type="text" id="newGroupName" placeholder="Group name (e.g. Middle School)..." onkeydown="if(event.key==='Enter')document.getElementById('newGroupName').blur()">
+                    <div class="student-checkbox-list" id="newGroupStudents"></div>
+                    <button class="btn-add" onclick="createGroup()" style="width:100%">Create Group</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ─── State ───
+    let currentData = null;
+    let students = [];
+    let groups = [];
+    let activeGroupIndex = -1; // -1 = All Students
+    let activeDayIndex = 0;
+
+    const today = new Date();
+    const yyyy = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+    document.getElementById('dateFrom').value = yyyy(today);
+    document.getElementById('dateTo').value = yyyy(today);
+
+    // ─── Presets ───
+    function setPreset(type, el) {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        if (el) el.classList.add('active');
+
+        const d = new Date();
+        const day = d.getDay();
+
+        if (type === 'today') {
+            document.getElementById('dateFrom').value = yyyy(d);
+            document.getElementById('dateTo').value = yyyy(d);
+        } else if (type === 'week') {
+            const mon = new Date(d);
+            mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+            const fri = new Date(mon);
+            fri.setDate(mon.getDate() + 4);
+            document.getElementById('dateFrom').value = yyyy(mon);
+            document.getElementById('dateTo').value = yyyy(fri);
+        } else if (type === 'last') {
+            const mon = new Date(d);
+            mon.setDate(d.getDate() - (day === 0 ? 13 : day + 6));
+            const fri = new Date(mon);
+            fri.setDate(mon.getDate() + 4);
+            document.getElementById('dateFrom').value = yyyy(mon);
+            document.getElementById('dateTo').value = yyyy(fri);
+        }
+    }
+
+    // ─── Pull Data ───
+    async function pullData() {
+        const btn = document.getElementById('btnPull');
+        const loading = document.getElementById('loadingOverlay');
+        const statusDot = document.getElementById('statusDot');
+
+        btn.disabled = true;
+        btn.classList.add('loading');
+        loading.classList.add('show');
+        statusDot.className = 'status-dot loading';
+
+        const start = document.getElementById('dateFrom').value;
+        const end = document.getElementById('dateTo').value;
+
+        try {
+            const body = start === end
+                ? { date: start }
+                : { start, end, weekdays_only: true };
+
+            const res = await fetch('/api/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                alert(data.message || 'Error pulling data');
+                statusDot.className = 'status-dot offline';
+            } else {
+                currentData = data;
+                activeDayIndex = 0;
+                renderDashboard(data);
+                statusDot.className = 'status-dot';
+
+                // Show cache info for weekly pulls
+                if (data.cached_count !== undefined) {
+                    const ts = document.getElementById('timestamp');
+                    const cached = data.cached_count;
+                    const scraped = data.scraped_count;
+                    if (cached > 0) {
+                        ts.textContent = (ts.textContent || '') + ` (${cached} cached, ${scraped} scraped)`;
+                    }
+                }
+                if (data.from_cache) {
+                    const ts = document.getElementById('timestamp');
+                    ts.textContent = (ts.textContent || '') + ' (from cache)';
+                }
+            }
+        } catch (e) {
+            alert('Failed to connect to server: ' + e.message);
+            statusDot.className = 'status-dot offline';
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('loading');
+            loading.classList.remove('show');
+        }
+    }
+
+    // ─── Render Dashboard ───
+    function renderDashboard(data) {
+        const main = document.getElementById('mainContent');
+        document.getElementById('timestamp').textContent = data.timestamp || '';
+
+        if (data.days && data.days.length > 0) {
+            renderWeeklyView(main, data);
+        } else if (data.students) {
+            renderDayView(main, data.students, data.date);
+        } else {
+            main.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9888;</div><div class="empty-title">No data returned</div></div>';
+        }
+    }
+
+    function renderWeeklyView(main, data) {
+        // Apply group filter to each day
+        const filteredDays = data.days.map(day => ({
+            ...day,
+            students: getFilteredStudents(day.students),
+        }));
+
+        let html = '';
+
+        // Day tabs with XP bar chart
+        const dayXPs = filteredDays.map(d => d.students.reduce((s, st) => s + st.total_xp, 0));
+        const maxXP = Math.max(...dayXPs, 1);
+
+        html += '<div class="day-tabs">';
+        filteredDays.forEach((day, i) => {
+            const totalXP = dayXPs[i];
+            const activeStudents = day.students.filter(s => !(s.absent || (s.total_xp === 0 && s.total_minutes === 0 && (!s.subjects || s.subjects.length === 0))));
+            const absentCount = day.students.length - activeStudents.length;
+            const avgAcc = activeStudents.length ? Math.round(activeStudents.reduce((s, st) => s + st.overall_accuracy, 0) / activeStudents.length) : 0;
+            const barPct = Math.round((totalXP / maxXP) * 100);
+            const absentTag = absentCount > 0 ? `<div style="font-size:10px;color:var(--accent-rose);margin-top:2px;">${absentCount} absent</div>` : '';
+            html += `<button class="day-tab ${i === activeDayIndex ? 'active' : ''}" onclick="switchDay(${i})">
+                <div class="day-tab-name">${day.day_name}</div>
+                <div class="day-tab-xp">${Math.round(totalXP)} XP &middot; ${avgAcc}%</div>
+                ${absentTag}
+                <div class="metric-bar" style="width:100%;margin-top:6px;height:3px;">
+                    <div class="metric-bar-fill ${avgAcc >= 80 ? 'emerald' : 'rose'}" style="width:${barPct}%"></div>
+                </div>
+            </button>`;
+        });
+        html += '</div>';
+
+        // Weekly leaderboard — aggregate across all days
+        html += renderWeeklyLeaderboard(filteredDays);
+
+        // Active day summary + students
+        const activeDay = filteredDays[activeDayIndex];
+        if (activeDay) {
+            html += `<div style="margin:16px 0 8px;font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">${activeDay.day_name} &mdash; ${activeDay.date}</div>`;
+            html += renderSummaryCards(activeDay.students);
+            html += '<div class="student-grid">';
+            activeDay.students.forEach(s => { html += renderStudentCard(s); });
+            html += '</div>';
+        }
+
+        // Weekly Trends
+        html += renderWeeklyTrends(filteredDays);
+
+        main.innerHTML = html;
+    }
+
+    function renderDayView(main, students, dateStr) {
+        const filtered = getFilteredStudents(students);
+        let html = renderSummaryCards(filtered);
+        html += renderLeaderboard(filtered);
+        html += '<div class="student-grid">';
+        filtered.forEach(s => { html += renderStudentCard(s); });
+        html += '</div>';
+        main.innerHTML = html;
+    }
+
+    function renderLeaderboard(students) {
+        if (!students.length) return '';
+        const sorted = [...students].sort((a,b) => b.total_xp - a.total_xp);
+        const maxXP = Math.max(...sorted.map(s => s.total_xp), 1);
+
+        let rows = sorted.map((s, i) => {
+            const pct = Math.round((s.total_xp / maxXP) * 100);
+            const accColor = s.overall_accuracy >= 80 ? 'emerald' : 'rose';
+            return `<div class="trend-item" style="padding:10px 14px;">
+                <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+                    <span style="font-size:12px;color:var(--text-muted);width:18px;text-align:center;font-weight:700;">${i+1}</span>
+                    <span class="trend-item-name" style="min-width:120px;">${s.name}</span>
+                    <div class="metric-bar" style="flex:1;height:6px;">
+                        <div class="metric-bar-fill ${accColor}" style="width:${pct}%"></div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;align-items:center;">
+                    <span class="trend-item-value blue">${Math.round(s.total_xp)} XP</span>
+                    <span class="trend-item-value ${s.overall_accuracy >= 80 ? 'good' : 'alert'}">${s.overall_accuracy}%</span>
+                    <span style="font-size:12px;color:var(--text-muted);">${s.total_minutes} min</span>
+                </div>
+            </div>`;
+        }).join('');
+
+        return `<div class="trend-panel" style="margin-bottom:20px;">
+            <div class="trend-panel-header" style="background:var(--bg-glass);color:var(--text-primary);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                Student Leaderboard
+            </div>
+            <div class="trend-panel-body" style="padding:12px 16px;">${rows}</div>
+        </div>`;
+    }
+
+    function renderWeeklyLeaderboard(days) {
+        if (!days || !days.length) return '';
+
+        // Aggregate totals per student across all days
+        const totals = {};
+        days.forEach(day => {
+            day.students.forEach(s => {
+                if (!totals[s.name]) {
+                    totals[s.name] = { name: s.name, xp: 0, minutes: 0, correct: 0, questions: 0, daysActive: 0, daysAbsent: 0 };
+                }
+                const isAbsent = s.absent || (s.total_xp === 0 && s.total_minutes === 0 && (!s.subjects || s.subjects.length === 0));
+                if (isAbsent) {
+                    totals[s.name].daysAbsent++;
+                } else {
+                    totals[s.name].xp += s.total_xp;
+                    totals[s.name].minutes += s.total_minutes;
+                    totals[s.name].daysActive++;
+                    // Weighted accuracy: sum of (accuracy * subjects_with_data) per day
+                    const activeSubs = s.subjects ? s.subjects.filter(x => !x.no_data).length : 0;
+                    totals[s.name].correct += s.overall_accuracy * (activeSubs || 1);
+                    totals[s.name].questions += (activeSubs || 1);
+                }
+            });
+        });
+
+        const sorted = Object.values(totals).sort((a, b) => b.xp - a.xp);
+        const maxXP = Math.max(...sorted.map(s => s.xp), 1);
+
+        let rows = sorted.map((s, i) => {
+            const pct = Math.round((s.xp / maxXP) * 100);
+            const avgAcc = s.questions > 0 ? Math.round(s.correct / s.questions) : 0;
+            const accColor = avgAcc >= 80 ? 'emerald' : 'rose';
+            const absentNote = s.daysAbsent > 0 ? `<span style="font-size:10px;color:var(--accent-rose);margin-left:4px;">${s.daysAbsent}d absent</span>` : '';
+            return `<div class="trend-item" style="padding:10px 14px;">
+                <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+                    <span style="font-size:12px;color:var(--text-muted);width:18px;text-align:center;font-weight:700;">${i+1}</span>
+                    <span class="trend-item-name" style="min-width:120px;">${s.name}${absentNote}</span>
+                    <div class="metric-bar" style="flex:1;height:6px;">
+                        <div class="metric-bar-fill ${accColor}" style="width:${pct}%"></div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;align-items:center;">
+                    <span class="trend-item-value blue">${Math.round(s.xp)} XP</span>
+                    <span class="trend-item-value ${avgAcc >= 80 ? 'good' : 'alert'}">${avgAcc}%</span>
+                    <span style="font-size:12px;color:var(--text-muted);">${s.minutes} min</span>
+                </div>
+            </div>`;
+        }).join('');
+
+        return `<div class="trend-panel" style="margin-bottom:20px;">
+            <div class="trend-panel-header" style="background:var(--bg-glass);color:var(--text-primary);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                Weekly Leaderboard &mdash; ${days.length} Days
+            </div>
+            <div class="trend-panel-body" style="padding:12px 16px;">${rows}</div>
+        </div>`;
+    }
+
+    function renderSummaryCards(students) {
+        const n = students.length;
+        const active = students.filter(s => !(s.absent || (s.total_xp === 0 && s.total_minutes === 0 && (!s.subjects || s.subjects.length === 0))));
+        const absentCount = n - active.length;
+        const totalXP = Math.round(students.reduce((s, st) => s + st.total_xp, 0));
+        const avgAcc = active.length ? Math.round(active.reduce((s, st) => s + st.overall_accuracy, 0) / active.length) : 0;
+        const avgMin = active.length ? Math.round(active.reduce((s, st) => s + st.total_minutes, 0) / active.length) : 0;
+        const totalMin = students.reduce((s, st) => s + st.total_minutes, 0);
+        const flagged = active.filter(s => s.overall_accuracy < 80).length;
+
+        const absentLabel = absentCount > 0 ? `, ${absentCount} absent` : '';
+
+        return `
+        <div class="summary-row fade-in">
+            <div class="summary-card blue">
+                <div class="summary-label">Total XP</div>
+                <div class="summary-value">${totalXP.toLocaleString()}</div>
+                <div class="summary-sub">${active.length} active${absentLabel}</div>
+            </div>
+            <div class="summary-card ${avgAcc >= 80 ? 'emerald' : 'amber'}">
+                <div class="summary-label">Avg Accuracy</div>
+                <div class="summary-value">${avgAcc}%</div>
+                <div class="summary-sub">${avgAcc >= 80 ? 'On target' : flagged + ' below 80%'}</div>
+            </div>
+            <div class="summary-card amber">
+                <div class="summary-label">Avg Minutes</div>
+                <div class="summary-value">${avgMin}</div>
+                <div class="summary-sub">${totalMin} total across all</div>
+            </div>
+            <div class="summary-card purple">
+                <div class="summary-label">Students</div>
+                <div class="summary-value">${n}</div>
+                <div class="summary-sub">${absentCount > 0 ? absentCount + ' absent, ' : ''}${flagged} need${flagged !== 1 ? '' : 's'} attention</div>
+            </div>
+        </div>`;
+    }
+
+    function renderStudentCard(student) {
+        const isAbsent = student.absent || (student.total_xp === 0 && student.total_minutes === 0 && (!student.subjects || student.subjects.length === 0));
+
+        if (isAbsent) {
+            return `
+            <div class="student-card flag-absent">
+                <div class="student-header">
+                    <span class="student-name">${student.name}</span>
+                    <div class="student-badges">
+                        <span class="badge badge-xp">0 XP</span>
+                        <span class="badge badge-acc warn">0%</span>
+                        <span class="badge badge-min warn">0 min</span>
+                    </div>
+                </div>
+                <div class="absent-banner">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    NO WORK COMPLETED &mdash; Absent or no activity recorded
+                </div>
+            </div>`;
+        }
+
+        const accClass = student.overall_accuracy >= 80 ? 'good' : 'warn';
+        const minClass = student.total_minutes >= 20 ? 'good' : 'warn';
+
+        // Card flag color
+        let flagClass = '';
+        if (student.overall_accuracy < 80) flagClass = 'flag-red';
+        else if (student.total_minutes < 20) flagClass = 'flag-yellow';
+        else if (student.overall_accuracy >= 90) flagClass = 'flag-green';
+
+        let subjectsHtml = '';
+        student.subjects.forEach(subj => {
+            const noData = subj.no_data;
+            const accColor = subj.accuracy >= 90 ? 'good' : (subj.accuracy < 80 && !noData ? 'warn' : '');
+            const minColor = !noData && subj.minutes < 20 ? 'low-min' : '';
+            const accBarColor = subj.accuracy >= 80 ? 'emerald' : (noData ? 'amber' : 'rose');
+            const accWidth = Math.min(100, subj.accuracy);
+
+            subjectsHtml += `
+            <div class="subject-row ${noData ? 'no-data' : ''}">
+                <span class="subject-name">${subj.name}</span>
+                <div class="subject-metrics">
+                    <div class="metric">
+                        <span class="metric-value" style="color: var(--accent-blue)">${Math.round(subj.xp)}</span>
+                        <span class="metric-unit">XP</span>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-bar"><div class="metric-bar-fill ${accBarColor}" style="width:${accWidth}%"></div></div>
+                        <span class="metric-value ${accColor}">${subj.accuracy}%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value ${minColor}">${subj.minutes}</span>
+                        <span class="metric-unit">min</span>
+                    </div>
+                    ${subj.mastered !== undefined ? `<div class="metric">
+                        <span class="metric-value" style="color: var(--accent-purple)">${subj.mastered}</span>
+                        <span class="metric-unit">mastered</span>
+                    </div>` : ''}
+                </div>
+            </div>`;
+        });
+
+        return `
+        <div class="student-card ${flagClass}">
+            <div class="student-header">
+                <span class="student-name">${student.name}</span>
+                <div class="student-badges">
+                    <span class="badge badge-xp">${Math.round(student.total_xp)} XP</span>
+                    <span class="badge badge-acc ${accClass}">${student.overall_accuracy}%</span>
+                    <span class="badge badge-min ${minClass}">${student.total_minutes} min</span>
+                </div>
+            </div>
+            <div class="student-subjects">${subjectsHtml}</div>
+        </div>`;
+    }
+
+    // ─── Weekly Trends ───
+    function renderWeeklyTrends(days) {
+        if (!days || days.length < 2) return '';
+
+        const studentTotals = {};
+        const subjectTotals = {};
+
+        days.forEach(day => {
+            day.students.forEach(student => {
+                if (!studentTotals[student.name]) {
+                    studentTotals[student.name] = { xp: 0, minutes: 0, accuracy: [], days: 0 };
+                }
+                studentTotals[student.name].xp += student.total_xp;
+                studentTotals[student.name].minutes += student.total_minutes;
+                studentTotals[student.name].accuracy.push(student.overall_accuracy);
+                studentTotals[student.name].days++;
+
+                student.subjects.forEach(subj => {
+                    if (subj.no_data) return;
+                    if (!subjectTotals[subj.name]) {
+                        subjectTotals[subj.name] = { xp: 0, minutes: 0, accuracy: [], count: 0 };
+                    }
+                    subjectTotals[subj.name].xp += subj.xp;
+                    subjectTotals[subj.name].minutes += subj.minutes;
+                    subjectTotals[subj.name].accuracy.push(subj.accuracy);
+                    subjectTotals[subj.name].count++;
+                });
+            });
+        });
+
+        const avg = arr => arr.length ? Math.round(arr.reduce((a,b) => a+b, 0) / arr.length) : 0;
+
+        const studentList = Object.entries(studentTotals).map(([name, d]) => ({
+            name, xp: d.xp, minutes: d.minutes, avgAccuracy: avg(d.accuracy), days: d.days,
+        }));
+
+        const subjectList = Object.entries(subjectTotals).map(([name, d]) => ({
+            name, xp: d.xp, minutes: d.minutes, avgAccuracy: avg(d.accuracy), count: d.count,
+        }));
+
+        const lowestAccSubjects = [...subjectList].sort((a,b) => a.avgAccuracy - b.avgAccuracy).slice(0, 3);
+        const lowestMinStudents = [...studentList].sort((a,b) => a.minutes - b.minutes).slice(0, 3);
+        const lowestXPStudents = [...studentList].sort((a,b) => a.xp - b.xp).slice(0, 3);
+
+        const highestXPStudents = [...studentList].sort((a,b) => b.xp - a.xp).slice(0, 3);
+        const highestAccSubjects = [...subjectList].sort((a,b) => b.avgAccuracy - a.avgAccuracy).slice(0, 3);
+        const highestMinStudents = [...studentList].sort((a,b) => b.minutes - a.minutes).slice(0, 3);
+
+        return `
+        <div class="trends-section fade-in">
+            <div class="section-title">
+                <span class="section-title-icon" style="background: var(--accent-blue-glow); color: var(--accent-blue);">&#9733;</span>
+                Weekly Trends &middot; ${days.length} days
+            </div>
+            <div class="trends-grid">
+                <div class="trend-panel alert">
+                    <div class="trend-panel-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Needs Attention
+                    </div>
+                    <div class="trend-panel-body">
+                        <div class="trend-category">
+                            <div class="trend-category-title">Lowest Accuracy Subjects</div>
+                            ${lowestAccSubjects.map(s => `
+                                <div class="trend-item">
+                                    <span class="trend-item-name">${s.name}</span>
+                                    <span class="trend-item-value ${s.avgAccuracy < 80 ? 'alert' : 'warn'}">${s.avgAccuracy}% avg</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="trend-category">
+                            <div class="trend-category-title">Lowest Total Minutes</div>
+                            ${lowestMinStudents.map(s => `
+                                <div class="trend-item">
+                                    <span class="trend-item-name">${s.name}</span>
+                                    <span class="trend-item-value warn">${s.minutes} min</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="trend-category">
+                            <div class="trend-category-title">Lowest Total XP</div>
+                            ${lowestXPStudents.map(s => `
+                                <div class="trend-item">
+                                    <span class="trend-item-name">${s.name}</span>
+                                    <span class="trend-item-value warn">${Math.round(s.xp)} XP</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trend-panel success">
+                    <div class="trend-panel-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Top Performers
+                    </div>
+                    <div class="trend-panel-body">
+                        <div class="trend-category">
+                            <div class="trend-category-title">Most XP Earned</div>
+                            ${highestXPStudents.map(s => `
+                                <div class="trend-item">
+                                    <span class="trend-item-name">${s.name}</span>
+                                    <span class="trend-item-value blue">${Math.round(s.xp)} XP</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="trend-category">
+                            <div class="trend-category-title">Highest Accuracy Subjects</div>
+                            ${highestAccSubjects.map(s => `
+                                <div class="trend-item">
+                                    <span class="trend-item-name">${s.name}</span>
+                                    <span class="trend-item-value good">${s.avgAccuracy}% avg</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="trend-category">
+                            <div class="trend-category-title">Most Active Minutes</div>
+                            ${highestMinStudents.map(s => `
+                                <div class="trend-item">
+                                    <span class="trend-item-name">${s.name}</span>
+                                    <span class="trend-item-value good">${s.minutes} min</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ─── Day Switching ───
+    function switchDay(index) {
+        activeDayIndex = index;
+        renderDashboard(currentData);
+    }
+
+    // ─── Student Management ───
+    async function loadStudents() {
+        const res = await fetch('/api/students');
+        const data = await res.json();
+        students = data.students || [];
+        renderStudentList();
+    }
+
+    function renderStudentList() {
+        const container = document.getElementById('studentList');
+        if (!students.length) {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">No students added yet</div>';
+            return;
+        }
+        container.innerHTML = students.map((s, i) => `
+            <div class="student-list-item">
+                <span class="student-list-name">${s}</span>
+                <button class="btn-remove" onclick="removeStudent(${i})">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    async function addStudent() {
+        const input = document.getElementById('newStudentInput');
+        const name = input.value.trim();
+        if (!name) return;
+        students.push(name);
+        input.value = '';
+        await saveStudents();
+    }
+
+    async function removeStudent(index) {
+        students.splice(index, 1);
+        await saveStudents();
+    }
+
+    async function saveStudents() {
+        await fetch('/api/students', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ students }),
+        });
+        renderStudentList();
+    }
+
+    // ─── Groups ───
+    async function loadGroups() {
+        const res = await fetch('/api/groups');
+        const data = await res.json();
+        groups = data.groups || [];
+        renderGroupTabs();
+        renderGroupList();
+        renderNewGroupStudents();
+    }
+
+    async function saveGroups() {
+        await fetch('/api/groups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ groups }),
+        });
+        renderGroupTabs();
+        renderGroupList();
+    }
+
+    function renderGroupTabs() {
+        const bar = document.getElementById('groupTabsBar');
+        if (!groups.length) {
+            bar.innerHTML = '';
+            return;
+        }
+        let html = `<button class="group-tab ${activeGroupIndex === -1 ? 'active' : ''}" onclick="switchGroup(-1)">All Students</button>`;
+        groups.forEach((g, i) => {
+            html += `<button class="group-tab ${activeGroupIndex === i ? 'active' : ''}" onclick="switchGroup(${i})">${g.name} <span style="opacity:0.6;font-size:11px;">(${g.students.length})</span></button>`;
+        });
+        html += `<button class="group-tab-manage" onclick="openModal(); switchModalTab('groups', document.querySelectorAll('.modal-tab')[1])">+ Group</button>`;
+        bar.innerHTML = html;
+    }
+
+    function switchGroup(index) {
+        activeGroupIndex = index;
+        renderGroupTabs();
+        if (currentData) renderDashboard(currentData);
+    }
+
+    function getFilteredStudents(studentsList) {
+        if (activeGroupIndex === -1 || !groups[activeGroupIndex]) return studentsList;
+        const groupNames = new Set(groups[activeGroupIndex].students.map(n => n.toLowerCase()));
+        return studentsList.filter(s => groupNames.has(s.name.toLowerCase()));
+    }
+
+    function renderGroupList() {
+        const container = document.getElementById('groupList');
+        if (!groups.length) {
+            container.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted)">No groups yet. Create one below.</div>';
+            return;
+        }
+        container.innerHTML = groups.map((g, gi) => {
+            const chips = g.students.map((s, si) =>
+                `<span class="group-student-chip">${s}<span class="chip-remove" onclick="removeFromGroup(${gi},${si})">&times;</span></span>`
+            ).join('');
+            return `<div class="group-card">
+                <div class="group-card-header">
+                    <span class="group-card-name">${g.name}</span>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <span class="group-card-count">${g.students.length} students</span>
+                        <button class="btn-remove" onclick="deleteGroup(${gi})" title="Delete group">&times;</button>
+                    </div>
+                </div>
+                <div class="group-card-students">${chips}</div>
+                <div style="margin-top:8px;">
+                    <select onchange="addToGroup(${gi}, this)" style="background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);padding:5px 8px;border-radius:6px;font-size:11px;font-family:inherit;">
+                        <option value="">+ Add student...</option>
+                        ${students.filter(s => !g.students.includes(s)).map(s => `<option value="${s}">${s}</option>`).join('')}
+                    </select>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderNewGroupStudents() {
+        const container = document.getElementById('newGroupStudents');
+        container.innerHTML = students.map(s =>
+            `<label class="student-checkbox-item"><input type="checkbox" value="${s}"> ${s}</label>`
+        ).join('');
+    }
+
+    async function createGroup() {
+        const nameInput = document.getElementById('newGroupName');
+        const name = nameInput.value.trim();
+        if (!name) { nameInput.focus(); return; }
+
+        const checked = [...document.querySelectorAll('#newGroupStudents input:checked')].map(cb => cb.value);
+        if (!checked.length) return;
+
+        groups.push({ name, students: checked });
+        nameInput.value = '';
+        document.querySelectorAll('#newGroupStudents input:checked').forEach(cb => cb.checked = false);
+        await saveGroups();
+    }
+
+    async function deleteGroup(gi) {
+        if (activeGroupIndex === gi) activeGroupIndex = -1;
+        else if (activeGroupIndex > gi) activeGroupIndex--;
+        groups.splice(gi, 1);
+        await saveGroups();
+    }
+
+    async function removeFromGroup(gi, si) {
+        groups[gi].students.splice(si, 1);
+        if (!groups[gi].students.length) {
+            groups.splice(gi, 1);
+            if (activeGroupIndex === gi) activeGroupIndex = -1;
+            else if (activeGroupIndex > gi) activeGroupIndex--;
+        }
+        await saveGroups();
+    }
+
+    async function addToGroup(gi, selectEl) {
+        const name = selectEl.value;
+        if (!name) return;
+        if (!groups[gi].students.includes(name)) {
+            groups[gi].students.push(name);
+            await saveGroups();
+        }
+        selectEl.value = '';
+    }
+
+    function switchModalTab(tab, btn) {
+        document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.modal-section').forEach(s => s.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        document.getElementById(tab === 'groups' ? 'modalGroups' : 'modalStudents').classList.add('active');
+        if (tab === 'groups') { renderGroupList(); renderNewGroupStudents(); }
+    }
+
+    function openModal() {
+        loadStudents();
+        loadGroups();
+        document.getElementById('modalOverlay').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('show');
+    }
+
+    function openSettings() { openModal(); }
+
+    document.getElementById('modalOverlay').addEventListener('click', e => {
+        if (e.target === e.currentTarget) closeModal();
+    });
+
+    // ─── Init ───
+    async function init() {
+        try {
+            // Load groups first so tabs render
+            const gRes = await fetch('/api/groups');
+            const gData = await gRes.json();
+            groups = gData.groups || [];
+            renderGroupTabs();
+
+            const res = await fetch('/api/cached');
+            const data = await res.json();
+            if (data && (data.students || data.days)) {
+                currentData = data;
+                document.getElementById('timestamp').textContent = data.timestamp || '';
+                if (data.date) {
+                    document.getElementById('dateFrom').value = data.date;
+                    document.getElementById('dateTo').value = data.date;
+                } else if (data.start && data.end) {
+                    document.getElementById('dateFrom').value = data.start;
+                    document.getElementById('dateTo').value = data.end;
+                }
+                renderDashboard(data);
+            }
+        } catch (e) {
+            console.log('No cached data');
+        }
+    }
+
+    init();
+
+    // ─── Chat / Q&A ───
+    let chatMessages = [];
+    let chatOpen = false;
+
+    function toggleChat() {
+        chatOpen = !chatOpen;
+        document.getElementById('chatPanel').classList.toggle('open', chatOpen);
+        document.getElementById('chatFab').classList.toggle('hidden', chatOpen);
+        if (chatOpen) document.getElementById('chatInput').focus();
+    }
+
+    function sendChat(text) {
+        const input = document.getElementById('chatInput');
+        const msg = text || input.value.trim();
+        if (!msg) return;
+        input.value = '';
+
+        chatMessages.push({ role: 'user', text: msg });
+        const answer = answerQuestion(msg, currentData);
+        chatMessages.push({ role: 'assistant', text: answer });
+
+        renderChatMessages();
+
+        // Hide suggestions after first message
+        document.getElementById('chatSuggestions').style.display = 'none';
+    }
+
+    function renderChatMessages() {
+        const container = document.getElementById('chatMessages');
+        container.innerHTML = chatMessages.map(m =>
+            `<div class="chat-bubble ${m.role}">${escapeHTML(m.text)}</div>`
+        ).join('');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHTML(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
+    // ─── Q&A Engine ───
+    function answerQuestion(question, data) {
+        if (!data || (!data.students && !data.days)) {
+            return 'No data loaded yet. Pull data first using the date controls above, then ask me anything about the results.';
+        }
+
+        const q = question.toLowerCase().trim();
+
+        // Get all students (flatten weekly data)
+        const allStudents = getStudents(data);
+        const isWeekly = !!(data.days && data.days.length > 1);
+
+        // Try to extract a student name from the question
+        const matchedStudent = findStudentInQuestion(q, allStudents);
+
+        // Try to extract a subject name
+        const allSubjects = getAllSubjectNames(allStudents);
+        const matchedSubject = findSubjectInQuestion(q, allSubjects);
+
+        // ── Student-specific questions ──
+        if (matchedStudent) {
+            const s = matchedStudent;
+
+            if (/lowest.*(accuracy|acc)|worst.*subject/i.test(q)) {
+                const subs = s.subjects.filter(x => !x.no_data).sort((a,b) => a.accuracy - b.accuracy);
+                if (!subs.length) return `${s.name} has no subject data available.`;
+                return `${s.name}'s lowest accuracy subject is ${subs[0].name} at ${subs[0].accuracy}% (${subs[0].xp} XP, ${subs[0].minutes} min).`;
+            }
+            if (/best.*subject|highest.*(accuracy|acc).*subject|strongest/i.test(q)) {
+                const subs = s.subjects.filter(x => !x.no_data).sort((a,b) => b.accuracy - a.accuracy);
+                if (!subs.length) return `${s.name} has no subject data available.`;
+                return `${s.name}'s best subject is ${subs[0].name} at ${subs[0].accuracy}% accuracy (${subs[0].xp} XP).`;
+            }
+            if (/how much xp|total xp|xp.*earn/i.test(q)) {
+                if (isWeekly) {
+                    const weekTotal = getWeeklyStudentXP(data, s.name);
+                    return `${s.name} earned ${s.total_xp} XP today and ${weekTotal} XP total this week.`;
+                }
+                return `${s.name} earned ${s.total_xp} XP total.`;
+            }
+            if (/miss|skip|absent|no.?data/i.test(q) && matchedSubject) {
+                if (!isWeekly) return `Weekly data is needed to check missed days. Try selecting a week range.`;
+                const missed = [];
+                data.days.forEach(day => {
+                    const st = day.students.find(x => x.name.toLowerCase() === s.name.toLowerCase());
+                    if (st) {
+                        const subj = st.subjects.find(x => x.name.toLowerCase() === matchedSubject.toLowerCase());
+                        if (subj && subj.no_data) missed.push(day.day_name);
+                    }
+                });
+                if (!missed.length) return `${s.name} did not miss ${matchedSubject} on any day this week.`;
+                return `${s.name} missed ${matchedSubject} on: ${missed.join(', ')}.`;
+            }
+            if (/minutes|time.*spen/i.test(q) && matchedSubject) {
+                const subj = s.subjects.find(x => x.name.toLowerCase() === matchedSubject.toLowerCase());
+                if (!subj) return `Could not find ${matchedSubject} data for ${s.name}.`;
+                return `${s.name} spent ${subj.minutes} minutes on ${subj.name} (${subj.xp} XP, ${subj.accuracy}% accuracy).`;
+            }
+            if (/minutes|time.*spen|how long/i.test(q)) {
+                return `${s.name} spent ${s.total_minutes} minutes total across all subjects.`;
+            }
+            if (/improv|trend|progress|getting better/i.test(q)) {
+                if (!isWeekly) return `Need weekly data to check trends. Select a week range and pull data.`;
+                const dayData = data.days.map(day => {
+                    const st = day.students.find(x => x.name.toLowerCase() === s.name.toLowerCase());
+                    return st ? { day: day.day_name, xp: st.total_xp, acc: st.overall_accuracy } : null;
+                }).filter(Boolean);
+                if (dayData.length < 2) return `Not enough days of data to determine a trend for ${s.name}.`;
+                const first = dayData[0], last = dayData[dayData.length - 1];
+                const accTrend = last.acc - first.acc;
+                const xpTrend = last.xp - first.xp;
+                let lines = [`${s.name}'s trend across ${dayData.length} days:`];
+                dayData.forEach(d => lines.push(`  ${d.day}: ${d.xp} XP, ${d.acc}%`));
+                lines.push(`Accuracy ${accTrend >= 0 ? 'up' : 'down'} ${Math.abs(accTrend)}% from ${first.day} to ${last.day}.`);
+                return lines.join('\n');
+            }
+
+            // General info about student
+            return `${s.name}: ${s.total_xp} XP, ${s.overall_accuracy}% accuracy, ${s.total_minutes} min total.\nSubjects: ${s.subjects.filter(x=>!x.no_data).map(x => `${x.name} (${x.accuracy}%, ${x.xp} XP)`).join(', ')}.`;
+        }
+
+        // ── Comparative questions ──
+        if (/lowest.*(accuracy|acc)|worst.*(accuracy|acc)/i.test(q) && !matchedSubject) {
+            const sorted = [...allStudents].sort((a,b) => a.overall_accuracy - b.overall_accuracy);
+            const worst = sorted.slice(0, 3);
+            return 'Lowest accuracy students:\n' + worst.map((s,i) => `  ${i+1}. ${s.name}: ${s.overall_accuracy}%`).join('\n');
+        }
+        if (/highest.*(accuracy|acc)|best.*(accuracy|acc)/i.test(q) && !matchedSubject) {
+            const sorted = [...allStudents].sort((a,b) => b.overall_accuracy - a.overall_accuracy);
+            const best = sorted.slice(0, 3);
+            return 'Highest accuracy students:\n' + best.map((s,i) => `  ${i+1}. ${s.name}: ${s.overall_accuracy}%`).join('\n');
+        }
+        if (/most xp|highest xp|top xp/i.test(q)) {
+            const sorted = [...allStudents].sort((a,b) => b.total_xp - a.total_xp);
+            return 'Most XP:\n' + sorted.slice(0,3).map((s,i) => `  ${i+1}. ${s.name}: ${s.total_xp} XP`).join('\n');
+        }
+        if (/least xp|lowest xp|fewest xp/i.test(q)) {
+            const sorted = [...allStudents].sort((a,b) => a.total_xp - b.total_xp);
+            return 'Least XP:\n' + sorted.slice(0,3).map((s,i) => `  ${i+1}. ${s.name}: ${s.total_xp} XP`).join('\n');
+        }
+        if (/who.*(need|attention|help|struggling|behind)/i.test(q)) {
+            const flagged = allStudents.filter(s => s.overall_accuracy < 80 || s.total_minutes < 20);
+            if (!flagged.length) return 'All students are on track — no one is below 80% accuracy or under 20 minutes.';
+            let lines = ['Students needing attention:'];
+            flagged.forEach(s => {
+                let reasons = [];
+                if (s.overall_accuracy < 80) reasons.push(`${s.overall_accuracy}% accuracy`);
+                if (s.total_minutes < 20) reasons.push(`only ${s.total_minutes} min`);
+                lines.push(`  - ${s.name}: ${reasons.join(', ')}`);
+            });
+            return lines.join('\n');
+        }
+        if (/best performer|top student|star student|mvp/i.test(q)) {
+            const sorted = [...allStudents].sort((a,b) => b.total_xp - a.total_xp);
+            const top = sorted[0];
+            if (!top) return 'No student data available.';
+            return `Top performer: ${top.name} with ${top.total_xp} XP, ${top.overall_accuracy}% accuracy, ${top.total_minutes} min.`;
+        }
+        if (/most.*(time|minutes)|spending.*most/i.test(q)) {
+            const sorted = [...allStudents].sort((a,b) => b.total_minutes - a.total_minutes);
+            return 'Most time spent:\n' + sorted.slice(0,3).map((s,i) => `  ${i+1}. ${s.name}: ${s.total_minutes} min`).join('\n');
+        }
+        if (/least.*(time|minutes)|spending.*least/i.test(q)) {
+            const sorted = [...allStudents].sort((a,b) => a.total_minutes - b.total_minutes);
+            return 'Least time spent:\n' + sorted.slice(0,3).map((s,i) => `  ${i+1}. ${s.name}: ${s.total_minutes} min`).join('\n');
+        }
+
+        // ── Subject questions ──
+        if (matchedSubject) {
+            if (/average.*(accuracy|acc)/i.test(q)) {
+                const accs = [];
+                allStudents.forEach(s => {
+                    const subj = s.subjects.find(x => x.name.toLowerCase() === matchedSubject.toLowerCase() && !x.no_data);
+                    if (subj) accs.push(subj.accuracy);
+                });
+                if (!accs.length) return `No data found for ${matchedSubject}.`;
+                const avg = Math.round(accs.reduce((a,b) => a+b, 0) / accs.length);
+                return `Average accuracy for ${matchedSubject}: ${avg}% across ${accs.length} students.`;
+            }
+            if (/most xp|highest xp/i.test(q)) {
+                let total = 0;
+                allStudents.forEach(s => {
+                    const subj = s.subjects.find(x => x.name.toLowerCase() === matchedSubject.toLowerCase() && !x.no_data);
+                    if (subj) total += subj.xp;
+                });
+                return `Total XP earned in ${matchedSubject}: ${total} across all students.`;
+            }
+        }
+
+        if (/lowest.*subject|worst.*subject/i.test(q)) {
+            const subjAgg = aggregateSubjects(allStudents);
+            const sorted = Object.entries(subjAgg).sort((a,b) => a[1].avgAcc - b[1].avgAcc);
+            if (!sorted.length) return 'No subject data available.';
+            return 'Lowest accuracy subjects:\n' + sorted.slice(0,3).map(([name, d], i) => `  ${i+1}. ${name}: ${d.avgAcc}% avg accuracy`).join('\n');
+        }
+        if (/which.*subject.*most xp|subject.*highest xp/i.test(q)) {
+            const subjAgg = aggregateSubjects(allStudents);
+            const sorted = Object.entries(subjAgg).sort((a,b) => b[1].totalXP - a[1].totalXP);
+            if (!sorted.length) return 'No subject data available.';
+            return 'Subjects by total XP:\n' + sorted.slice(0,3).map(([name, d], i) => `  ${i+1}. ${name}: ${d.totalXP} XP`).join('\n');
+        }
+
+        // ── Weekly / trend questions ──
+        if (/weekly summary|how.*week|week.*overview|week.*recap/i.test(q)) {
+            if (!isWeekly) {
+                // Single day summary
+                const n = allStudents.length;
+                const totalXP = allStudents.reduce((s, st) => s + st.total_xp, 0);
+                const avgAcc = n ? Math.round(allStudents.reduce((s, st) => s + st.overall_accuracy, 0) / n) : 0;
+                const flagged = allStudents.filter(s => s.overall_accuracy < 80).length;
+                return `Today's summary: ${n} students, ${totalXP} total XP, ${avgAcc}% avg accuracy. ${flagged} student${flagged !== 1 ? 's' : ''} below 80%.`;
+            }
+            let lines = [`Weekly summary (${data.days.length} days):`];
+            let weekXP = 0, weekAcc = [];
+            data.days.forEach(day => {
+                const dayXP = day.students.reduce((s, st) => s + st.total_xp, 0);
+                const dayAcc = day.students.length ? Math.round(day.students.reduce((s, st) => s + st.overall_accuracy, 0) / day.students.length) : 0;
+                weekXP += dayXP;
+                weekAcc.push(dayAcc);
+                lines.push(`  ${day.day_name}: ${dayXP} XP, ${dayAcc}% avg accuracy`);
+            });
+            const bestDay = data.days.reduce((best, day) => {
+                const xp = day.students.reduce((s, st) => s + st.total_xp, 0);
+                return xp > best.xp ? { name: day.day_name, xp } : best;
+            }, { name: '', xp: 0 });
+            lines.push(`\nTotal week XP: ${weekXP}`);
+            lines.push(`Best day: ${bestDay.name} (${bestDay.xp} XP)`);
+            lines.push(`Avg accuracy across week: ${Math.round(weekAcc.reduce((a,b)=>a+b,0)/weekAcc.length)}%`);
+            return lines.join('\n');
+        }
+
+        if (/what day.*highest|best day|highest.*day/i.test(q)) {
+            if (!isWeekly) return 'Need weekly data to compare days. Select a week range.';
+            let best = { name: '', xp: 0 };
+            data.days.forEach(day => {
+                const xp = day.students.reduce((s, st) => s + st.total_xp, 0);
+                if (xp > best.xp) best = { name: day.day_name, xp };
+            });
+            return `Best day: ${best.name} with ${best.xp} total XP.`;
+        }
+
+        if (/what day.*lowest|worst day|lowest.*day/i.test(q)) {
+            if (!isWeekly) return 'Need weekly data to compare days. Select a week range.';
+            let worst = { name: '', xp: Infinity };
+            data.days.forEach(day => {
+                const xp = day.students.reduce((s, st) => s + st.total_xp, 0);
+                if (xp < worst.xp) worst = { name: day.day_name, xp };
+            });
+            return `Worst day: ${worst.name} with ${worst.xp} total XP.`;
+        }
+
+        // ── Fallback ──
+        return `I can answer questions like:
+  - "Who needs help?" / "Who has the lowest accuracy?"
+  - "Best performer?" / "Who has the most XP?"
+  - "[Name]'s lowest accuracy subject?"
+  - "[Name]'s best subject?"
+  - "How much XP did [Name] earn?"
+  - "What days did [Name] miss [subject]?"
+  - "Average accuracy for [subject]?"
+  - "Weekly summary" / "What day had the highest XP?"
+  - "Is [Name] improving?"
+Try asking one of these!`;
+    }
+
+    // ─── Q&A Helpers ───
+    function getStudents(data) {
+        if (data.students) return data.students;
+        if (data.days && data.days.length > 0) {
+            // Return the active day's students for single-day queries
+            return data.days[activeDayIndex] ? data.days[activeDayIndex].students : data.days[0].students;
+        }
+        return [];
+    }
+
+    function getWeeklyStudentXP(data, name) {
+        if (!data.days) return 0;
+        let total = 0;
+        data.days.forEach(day => {
+            const st = day.students.find(s => s.name.toLowerCase() === name.toLowerCase());
+            if (st) total += st.total_xp;
+        });
+        return total;
+    }
+
+    function findStudentInQuestion(q, students) {
+        // Try to find a student name mentioned in the question
+        let best = null;
+        let bestLen = 0;
+        students.forEach(s => {
+            const nameLower = s.name.toLowerCase();
+            // Check full name first, then first name
+            if (q.includes(nameLower) && nameLower.length > bestLen) {
+                best = s;
+                bestLen = nameLower.length;
+            }
+            const firstName = nameLower.split(' ')[0];
+            if (firstName.length > 2 && q.includes(firstName) && firstName.length > bestLen) {
+                best = s;
+                bestLen = firstName.length;
+            }
+        });
+        return best;
+    }
+
+    function getAllSubjectNames(students) {
+        const names = new Set();
+        students.forEach(s => s.subjects.forEach(subj => names.add(subj.name)));
+        return [...names];
+    }
+
+    function findSubjectInQuestion(q, subjectNames) {
+        let best = null;
+        let bestLen = 0;
+        subjectNames.forEach(name => {
+            const lower = name.toLowerCase();
+            if (q.includes(lower) && lower.length > bestLen) {
+                best = name;
+                bestLen = lower.length;
+            }
+        });
+        return best;
+    }
+
+    function aggregateSubjects(students) {
+        const agg = {};
+        students.forEach(s => {
+            s.subjects.forEach(subj => {
+                if (subj.no_data) return;
+                if (!agg[subj.name]) agg[subj.name] = { accs: [], totalXP: 0 };
+                agg[subj.name].accs.push(subj.accuracy);
+                agg[subj.name].totalXP += subj.xp;
+            });
+        });
+        Object.keys(agg).forEach(name => {
+            const a = agg[name];
+            a.avgAcc = Math.round(a.accs.reduce((x,y) => x+y, 0) / a.accs.length);
+        });
+        return agg;
+    }
+</script>
+</body>
+</html>
