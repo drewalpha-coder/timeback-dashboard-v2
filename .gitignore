@@ -1,4 +1,7 @@
 cache/
 data.json
+student_ids.json
+students.json
+groups.json
 __pycache__/
 *.pyc

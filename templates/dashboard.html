@@ -1230,8 +1230,8 @@
     <div class="main" id="mainContent">
         <div class="empty-state" id="emptyState">
             <div class="empty-icon">&#9685;</div>
-            <div class="empty-title">No data yet</div>
-            <div>Select a date and pull data to get started</div>
+            <div class="empty-title" id="emptyTitle">Welcome to TimeBack Dashboard</div>
+            <div id="emptyMessage">Checking connection...</div>
         </div>
     </div>
 </div>
@@ -1266,7 +1266,7 @@
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
     <div class="loading-text" id="loadingText">Pulling metrics from TimeBack...</div>
-    <div class="loading-sub" id="loadingSub">Agents are working in background tabs</div>
+    <div class="loading-sub" id="loadingSub">Fetching data in the background</div>
 </div>
 
 <!-- Student / Groups Modal -->
@@ -2020,6 +2020,39 @@
             groups = gData.groups || [];
             renderGroupTabs();
 
+            // Load students
+            const sRes = await fetch('/api/students');
+            const sData = await sRes.json();
+            students = sData.students || [];
+
+            // Check connection status
+            const statusRes = await fetch('/api/status');
+            const statusData = await statusRes.json();
+            const statusDot = document.getElementById('statusDot');
+
+            if (!statusData.chrome) {
+                statusDot.className = 'status-dot offline';
+                document.getElementById('emptyTitle').textContent = 'Chrome Not Detected';
+                document.getElementById('emptyMessage').innerHTML = 'Make sure Google Chrome is open and you are logged into <strong>TimeBack</strong>.<br><br>The dashboard reads your existing Chrome session \u2014 no extra login needed.<br><br><small style="color:var(--text-muted)">Then restart this app so it can connect.</small>';
+                return;
+            }
+
+            if (!statusData.authenticated) {
+                statusDot.className = 'status-dot offline';
+                document.getElementById('emptyTitle').textContent = 'Not Logged Into TimeBack';
+                document.getElementById('emptyMessage').innerHTML = 'Open <strong>TimeBack</strong> in Chrome and sign in with your Google account.<br><br>Once logged in, come back here and click <strong>Pull Data</strong>.<br><br><small style="color:var(--text-muted)">The dashboard uses your existing session \u2014 no passwords are stored.</small>';
+                return;
+            }
+
+            statusDot.className = 'status-dot';
+
+            if (!students.length) {
+                document.getElementById('emptyTitle').textContent = 'Get Started';
+                document.getElementById('emptyMessage').innerHTML = 'Add your students to begin tracking their progress.<br><br><button class="btn-pull" onclick="openModal()" style="margin-top:8px;padding:10px 24px;font-size:14px;">Add Students</button>';
+                return;
+            }
+
+            // Load cached data if available
             const res = await fetch('/api/cached');
             const data = await res.json();
             if (data && (data.students || data.days)) {
@@ -2033,9 +2066,14 @@
                     document.getElementById('dateTo').value = data.end;
                 }
                 renderDashboard(data);
+            } else {
+                document.getElementById('emptyTitle').textContent = 'Ready to Go';
+                document.getElementById('emptyMessage').innerHTML = `You have ${students.length} student${students.length === 1 ? '' : 's'} configured.<br>Select a date and click <strong>Pull Data</strong> to get started.`;
             }
         } catch (e) {
-            console.log('No cached data');
+            console.log('Init error:', e);
+            document.getElementById('emptyTitle').textContent = 'No data yet';
+            document.getElementById('emptyMessage').textContent = 'Select a date and pull data to get started';
         }
     }
 

@@ -145,7 +145,7 @@ def ensure_chrome_debug():
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         "--remote-debugging-port=9222",
         f"--user-data-dir={wrapper}",
-        "--profile-directory=Profile 12",
+        "--profile-directory=Default",  # Change this if Chrome uses a different profile
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     for _ in range(15):
@@ -494,6 +494,44 @@ def cached_data():
     return jsonify(None)
 
 
+@app.route("/api/status", methods=["GET"])
+def status():
+    """Check if Chrome debug is reachable and TimeBack session is active."""
+    try:
+        import urllib.request
+        urllib.request.urlopen(CDP_URL + "/json/version", timeout=2)
+        chrome_ok = True
+    except:
+        chrome_ok = False
+
+    cookies = None
+    if chrome_ok:
+        try:
+            cookies = get_auth_cookies()
+        except:
+            pass
+
+    return jsonify({
+        "chrome": chrome_ok,
+        "authenticated": bool(cookies),
+    })
+
+
+@app.route("/api/clear", methods=["POST"])
+def clear_data():
+    """Clear all cached data and student IDs for a fresh start."""
+    global STUDENT_IDS
+    import shutil
+    if CACHE_DIR.exists():
+        shutil.rmtree(CACHE_DIR)
+        CACHE_DIR.mkdir(exist_ok=True)
+    STUDENT_IDS = {}
+    save_student_ids()
+    if DATA_FILE.exists():
+        DATA_FILE.write_text("{}")
+    return jsonify({"success": True})
+
+
 if __name__ == "__main__":
     ensure_chrome_debug()
-    app.run(port=5050, debug=True)
+    app.run(port=5051, debug=True)

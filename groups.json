@@ -1,33 +1,10 @@
 [
   {
-    "name": "Middle School",
+    "name": "ATX MS",
     "students": [
-      "Theo Jenkins",
-      "Angus Duncan",
-      "Liam Moore",
-      "Colton Bellamy",
-      "Aidan Chase",
-      "Rhys Robertson",
-      "Donovan warm",
-      "Greyson Boyle",
-      "Nicholas Choe"
-    ]
-  },
-  {
-    "name": "Drew's Guide Group",
-    "students": [
-      "Theo Jenkins",
-      "Angus Duncan",
-      "Liam Moore",
-      "Colton Bellamy"
-    ]
-  },
-  {
-    "name": "L2",
-    "students": [
-      "Jonah Penna",
-      "Niam Choe",
-      "August Haig"
+      "Jack Cotner",
+      "Jude Hock",
+      "Roarke Radia"
     ]
   }
 ]
