@@ -70,6 +70,18 @@
         }
         #tb-dash-overlay * { margin: 0; padding: 0; box-sizing: border-box; }
         #tb-dash-overlay .app { position: relative; z-index: 1; }
+        #tb-dash-overlay .section-header {
+            font-size: 14px; font-weight: 700; color: var(--text-secondary);
+            letter-spacing: 0.5px; text-transform: uppercase;
+            margin: 24px 0 12px; padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 8px;
+        }
+        #tb-dash-overlay .section-header:first-child { margin-top: 8px; }
+        #tb-dash-overlay .section-header .section-date {
+            color: var(--accent-blue); font-weight: 600;
+            text-transform: none; letter-spacing: 0;
+        }
         #tb-dash-overlay .topbar {
             display: flex; align-items: center; justify-content: space-between;
             padding: 16px 32px; background: rgba(10, 14, 26, 0.8);
@@ -527,7 +539,7 @@
             <div class="topbar">
                 <div class="topbar-left">
                     <div class="logo">TB</div>
-                    <span class="app-title">TimeBack Dashboard</span>
+                    <span class="app-title">TimeBack XP Tracking</span>
                 </div>
                 <div class="topbar-right">
                     <span class="timestamp" id="timestamp"></span>
@@ -563,7 +575,7 @@
             <div class="main" id="mainContent">
                 <div class="empty-state" id="emptyState">
                     <div class="empty-icon">&#9685;</div>
-                    <div class="empty-title" id="emptyTitle">Welcome to TimeBack Dashboard</div>
+                    <div class="empty-title" id="emptyTitle">Welcome to TimeBack XP Tracking</div>
                     <div id="emptyMessage">Checking connection...</div>
                 </div>
             </div>
@@ -914,7 +926,11 @@
         var filteredDays = data.days.map(function(day) {
             return Object.assign({}, day, { students: getFilteredStudents(day.students) });
         });
+        var startLabel = formatDateLabel(data.start || (filteredDays[0] && filteredDays[0].date));
+        var endLabel = formatDateLabel(data.end || (filteredDays[filteredDays.length - 1] && filteredDays[filteredDays.length - 1].date));
+        var rangeLabel = startLabel + ' \u2013 ' + endLabel;
         var html = '';
+        html += '<div class="section-header">Daily XP Overview <span class="section-date">' + rangeLabel + '</span></div>';
         var dayXPs = filteredDays.map(function(d) { return d.students.reduce(function(s, st) { return s + st.total_xp; }, 0); });
         var maxXP = Math.max.apply(null, dayXPs.concat([1]));
         html += '<div class="day-tabs">';
@@ -934,11 +950,14 @@
                 '</div></button>';
         });
         html += '</div>';
+        html += '<div class="section-header">Weekly XP Leaderboard <span class="section-date">' + rangeLabel + '</span></div>';
         html += renderWeeklyLeaderboard(filteredDays);
         var activeDay = filteredDays[activeDayIndex];
         if (activeDay) {
-            html += '<div style="margin:16px 0 8px;font-size:13px;color:var(--text-muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">' + activeDay.day_name + ' &mdash; ' + activeDay.date + '</div>';
+            var activeDateLabel = formatDateLabel(activeDay.date);
+            html += '<div class="section-header">' + activeDay.day_name + ' Summary <span class="section-date">' + activeDateLabel + '</span></div>';
             html += renderSummaryCards(activeDay.students);
+            html += '<div class="section-header">' + activeDay.day_name + ' Student Breakdown <span class="section-date">' + activeDateLabel + '</span></div>';
             html += '<div class="student-grid">';
             activeDay.students.forEach(function(s) { html += renderStudentCard(s); });
             html += '</div>';
@@ -947,10 +966,20 @@
         main.innerHTML = html;
     }
 
+    function formatDateLabel(dateStr) {
+        if (!dateStr) return '';
+        var d = new Date(dateStr + 'T12:00:00');
+        return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
     function renderDayView(main, studentsData, dateStr) {
         var filtered = getFilteredStudents(studentsData);
-        var html = renderSummaryCards(filtered);
+        var dateLabel = formatDateLabel(dateStr);
+        var html = '<div class="section-header">Daily Summary <span class="section-date">' + dateLabel + '</span></div>';
+        html += renderSummaryCards(filtered);
+        html += '<div class="section-header">XP Leaderboard <span class="section-date">' + dateLabel + '</span></div>';
         html += renderLeaderboard(filtered);
+        html += '<div class="section-header">Individual Student Breakdown <span class="section-date">' + dateLabel + '</span></div>';
         html += '<div class="student-grid">';
         filtered.forEach(function(s) { html += renderStudentCard(s); });
         html += '</div>';
