@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TimeBack Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0a0e1a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 60px 24px 48px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .header-icon {
+    display: inline-block;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    margin-bottom: 20px;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3);
+  }
+
+  .header-icon::after {
+    content: '';
+    position: absolute;
+    inset: 14px;
+    border: 3px solid rgba(255,255,255,0.9);
+    border-radius: 6px;
+    border-top-width: 8px;
+  }
+
+  .header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    font-size: 1.125rem;
+    color: #94a3b8;
+    font-weight: 400;
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    margin-bottom: 48px;
+  }
+
+  .step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .step-number {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.15);
+    border: 2px solid rgba(59, 130, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #3b82f6;
+    margin-top: 2px;
+  }
+
+  .step-content h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 6px;
+  }
+
+  .step-content p {
+    font-size: 0.925rem;
+    color: #94a3b8;
+  }
+
+  /* Bookmarklet button */
+  .bookmarklet-wrap {
+    text-align: center;
+    margin: 28px 0 8px;
+  }
+
+  .bookmarklet-btn {
+    display: inline-block;
+    padding: 16px 36px;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6, #7c3aed);
+    border-radius: 9999px;
+    text-decoration: none;
+    cursor: grab;
+    box-shadow:
+      0 4px 20px rgba(59, 130, 246, 0.4),
+      0 0 0 0 rgba(59, 130, 246, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: pulse-glow 2.5s ease-in-out infinite;
+    user-select: none;
+  }
+
+  .bookmarklet-btn:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow:
+      0 8px 32px rgba(59, 130, 246, 0.5),
+      0 0 0 0 rgba(59, 130, 246, 0);
+  }
+
+  .bookmarklet-btn:active {
+    cursor: grabbing;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.3); }
+    50%      { box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4), 0 0 0 10px rgba(59, 130, 246, 0); }
+  }
+
+  .drag-hint {
+    display: block;
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .drag-hint .arrow {
+    display: inline-block;
+    animation: bounce-up 1.5s ease-in-out infinite;
+  }
+
+  @keyframes bounce-up {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+  }
+
+  /* Notes */
+  .notes {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 40px;
+  }
+
+  .notes h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 14px;
+  }
+
+  .notes ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .notes li {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .notes li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3b82f6;
+  }
+
+  /* Expandable help */
+  .help-section {
+    margin-bottom: 48px;
+  }
+
+  .help-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 0;
+    transition: color 0.2s;
+  }
+
+  .help-toggle:hover {
+    color: #60a5fa;
+  }
+
+  .help-toggle .chevron {
+    display: inline-block;
+    transition: transform 0.3s;
+    font-size: 0.75rem;
+  }
+
+  .help-toggle.open .chevron {
+    transform: rotate(90deg);
+  }
+
+  .help-body {
+    display: none;
+    margin-top: 16px;
+    padding: 20px 24px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+  }
+
+  .help-body.open {
+    display: block;
+  }
+
+  .help-body h5 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+  }
+
+  .help-body ol {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .help-body li {
+    font-size: 0.875rem;
+    color: #94a3b8;
+  }
+
+  .help-body p {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-top: 16px;
+  }
+
+  .help-body .browser-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0 12px;
+  }
+
+  .browser-tab {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .browser-tab.active,
+  .browser-tab:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #3b82f6;
+  }
+
+  .browser-instructions {
+    display: none;
+  }
+
+  .browser-instructions.active {
+    display: block;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .footer p {
+    font-size: 0.8rem;
+    color: #475569;
+  }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .container { padding: 40px 16px 32px; }
+    .header h1 { font-size: 1.75rem; }
+    .bookmarklet-btn { padding: 14px 28px; font-size: 1rem; }
+    .step { gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon"></div>
+    <h1>TimeBack Dashboard</h1>
+    <p>Student metrics at a glance</p>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+
+    <!-- Step 1 -->
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h3>Drag the button below to your bookmarks bar</h3>
+        <p>Click and hold, then drag it up to your browser's bookmarks bar and release.</p>
+
+        <div class="bookmarklet-wrap">
+          <a class="bookmarklet-btn"
+             href="javascript:void(function(){if(document.getElementById('tb-dash-overlay')){document.getElementById('tb-dash-overlay').remove();document.getElementById('tb-dash-styles').remove();return}var s=document.createElement('script');s.src='https://drewalpha-coder.github.io/timeback-dashboard-v2/timeback-dashboard.js?v='+Date.now();document.head.appendChild(s)})()"
+             title="Drag this to your bookmarks bar"
+             onclick="event.preventDefault();alert('Don\u0027t click \u2014 drag this button to your bookmarks bar instead!');">&#x1F4CA; TimeBack Dashboard</a>
+          <span class="drag-hint"><span class="arrow">&uarr;</span> Drag this to your bookmarks bar</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h3>Go to TimeBack and log in</h3>
+        <p>Open <strong>alpha.timeback.com</strong> and sign in with your Google account as usual.</p>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <h3>Click the bookmark</h3>
+        <p>Click <strong>"&#x1F4CA; TimeBack Dashboard"</strong> in your bookmarks bar. The dashboard will appear as an overlay.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Notes -->
+  <div class="notes">
+    <h4>Good to know</h4>
+    <ul>
+      <li>You must be logged into TimeBack for the dashboard to work.</li>
+      <li>Your data stays in your browser &mdash; nothing is sent to any server.</li>
+      <li>Click the bookmark again or press the &times; button to close the dashboard.</li>
+    </ul>
+  </div>
+
+  <!-- Help section -->
+  <div class="help-section">
+    <button class="help-toggle" id="helpToggle" aria-expanded="false">
+      <span class="chevron">&#9654;</span>
+      Not sure how to add a bookmarklet?
+    </button>
+
+    <div class="help-body" id="helpBody">
+      <h5>First, make sure your bookmarks bar is visible:</h5>
+
+      <div class="browser-tabs">
+        <button class="browser-tab active" data-browser="chrome">Chrome</button>
+        <button class="browser-tab" data-browser="firefox">Firefox</button>
+        <button class="browser-tab" data-browser="edge">Edge</button>
+        <button class="browser-tab" data-browser="safari">Safari</button>
+      </div>
+
+      <div class="browser-instructions active" id="instr-chrome">
+        <ol>
+          <li>Press <strong>Ctrl+Shift+B</strong> (Windows) or <strong>Cmd+Shift+B</strong> (Mac) to show the bookmarks bar.</li>
+          <li>Now drag the blue <strong>"&#x1F4CA; TimeBack Dashboard"</strong> button above up to that bar.</li>
+          <li>You should see it appear as a new bookmark. Done!</li>
+        </ol>
+      </div>
+
+      <div class="browser-instructions" id="instr-firefox">
+        <ol>
+          <li>Press <strong>Ctrl+Shift+B</strong> (Windows) or <strong>Cmd+Shift+B</strong> (Mac) to toggle the bookmarks toolbar.</li>
+          <li>Drag the blue button up to the toolbar and release.</li>
+          <li>You should see it appear as a new bookmark. Done!</li>
+        </ol>
+      </div>
+
+      <div class="browser-instructions" id="instr-edge">
+        <ol>
+          <li>Press <strong>Ctrl+Shift+B</strong> to show the favorites bar.</li>
+          <li>Drag the blue button up to the bar and release.</li>
+          <li>You should see it appear as a new favorite. Done!</li>
+        </ol>
+      </div>
+
+      <div class="browser-instructions" id="instr-safari">
+        <ol>
+          <li>Go to <strong>View &gt; Show Favorites Bar</strong> (or press <strong>Cmd+Shift+B</strong>).</li>
+          <li>Drag the blue button up to the favorites bar and release.</li>
+          <li>You should see it appear as a new bookmark. Done!</li>
+        </ol>
+      </div>
+
+      <p>If dragging doesn't work, you can also right-click the button, copy the link address, create a new bookmark manually, and paste the address as the URL.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>TimeBack Dashboard &middot; Built for internal use</p>
+  </div>
+
+</div>
+
+<script>
+  // Toggle help section
+  var toggle = document.getElementById('helpToggle');
+  var body = document.getElementById('helpBody');
+  toggle.addEventListener('click', function () {
+    var isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen);
+  });
+
+  // Browser tabs
+  var tabs = document.querySelectorAll('.browser-tab');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      document.querySelectorAll('.browser-instructions').forEach(function (el) {
+        el.classList.remove('active');
+      });
+      document.getElementById('instr-' + tab.dataset.browser).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
