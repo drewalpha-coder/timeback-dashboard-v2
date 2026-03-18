@@ -799,10 +799,15 @@
         return processed;
     }
 
+    function getLocalToday() {
+        var now = new Date();
+        return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    }
+
     async function scrapeSingle(dateStr) {
         var studentList = getStudentsFromStorage();
         if (!studentList.length) return { error: 'no_students', message: 'Add students first.' };
-        var today = new Date().toISOString().split('T')[0];
+        var today = getLocalToday();
         dateStr = dateStr || today;
         if (dateStr !== today) {
             var cached = getCachedDay(dateStr);
@@ -820,7 +825,7 @@
         var studentList = getStudentsFromStorage();
         if (!studentList.length) return { error: 'no_students', message: 'Add students first.' };
         weekdaysOnly = weekdaysOnly !== false;
-        var today = new Date().toISOString().split('T')[0];
+        var today = getLocalToday();
         var dates = [];
         var current = new Date(startDate + 'T12:00:00');
         var end = new Date(endDate + 'T12:00:00');
