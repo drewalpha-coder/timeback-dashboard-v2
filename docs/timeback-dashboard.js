@@ -1913,80 +1913,119 @@
 
     init();
 
-    // === API Discovery: find assessment/test endpoints ===
-    // Intercept fetch to log any assessment-related calls TimeBack makes
+    // === API Discovery: find assessment/test data ===
+    // Runs automatically, shows results in a toast notification on the dashboard
     (function() {
-        var originalFetch = window.fetch;
-        window._tbOriginalFetch = originalFetch;
-        window.fetch = function() {
-            var url = arguments[0];
-            if (typeof url === 'string' && (url.indexOf('assessment') !== -1 || url.indexOf('test') !== -1 || url.indexOf('Test') !== -1)) {
-                console.log('%c[XP Tracker Discovery] Assessment-related fetch detected:', 'color: #eab308; font-weight: bold;');
-                console.log('  URL:', url);
-                if (arguments[1] && arguments[1].body) {
-                    try { console.log('  Payload:', JSON.parse(arguments[1].body)); } catch(e) { console.log('  Payload (raw):', arguments[1].body); }
-                }
-                return originalFetch.apply(this, arguments).then(function(resp) {
-                    var cloned = resp.clone();
-                    cloned.json().then(function(data) {
-                        console.log('%c[XP Tracker Discovery] Assessment response:', 'color: #eab308; font-weight: bold;');
-                        console.log(data);
-                    }).catch(function(){});
-                    return resp;
-                });
-            }
-            return originalFetch.apply(this, arguments);
-        };
-
-        // Also proactively try the most likely assessment endpoint names
         var studentList = getStudentsFromStorage();
         var studentIds = getStudentIds();
+        var firstStudentName = null;
         var firstStudentId = null;
         for (var i = 0; i < studentList.length; i++) {
-            if (studentIds[studentList[i]]) { firstStudentId = studentIds[studentList[i]]; break; }
+            if (studentIds[studentList[i]]) {
+                firstStudentName = studentList[i];
+                firstStudentId = studentIds[studentList[i]];
+                break;
+            }
         }
+        if (!firstStudentId) return;
 
-        if (firstStudentId) {
-            var endpointGuesses = [
-                '/_serverFn/src_features_assessment-results_actions_getUserPendingAssessments_ts--getUserPendingAssessments_createServerFn_handler?createServerFn',
-                '/_serverFn/src_features_assessment-results_actions_getUserAssessments_ts--getUserAssessments_createServerFn_handler?createServerFn',
-                '/_serverFn/src_features_assessment-results_actions_getAssessmentResults_ts--getAssessmentResults_createServerFn_handler?createServerFn',
-            ];
+        var today = getLocalToday();
+        var offset = getPacificOffsetHours(today);
+        var offsetStr = String(offset).padStart(2, '0');
 
-            var today = getLocalToday();
-            var payloadGuesses = [
-                { data: { studentId: firstStudentId }, context: {} },
-                { data: { studentId: firstStudentId, timezone: 'America/Los_Angeles' }, context: {} },
-                { data: { userId: firstStudentId }, context: {} },
-                { data: { studentId: firstStudentId, startDate: today + 'T07:00:00.000Z', endDate: today + 'T06:59:59.999Z' }, context: {} },
-            ];
+        // 1. Check raw activity metrics for extra keys
+        fetch('/_serverFn/src_features_learning-metrics_actions_getActivityMetrics_ts--getActivityMetrics_createServerFn_handler?createServerFn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                data: { startDate: today + 'T' + offsetStr + ':00:00.000Z', endDate: today + 'T' + offsetStr + ':00:00.000Z', studentId: firstStudentId, timezone: 'America/Los_Angeles' },
+                context: {},
+            }),
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            var metrics = ((data.result || {}).data) || {};
+            var topKeys = Object.keys(metrics);
+            console.log('[XP Discovery] Activity metrics top keys:', topKeys);
+            var facts = (metrics.facts || {})[today] || {};
+            for (var subj in facts) {
+                if (!facts.hasOwnProperty(subj)) continue;
+                var keys = Object.keys(facts[subj]);
+                console.log('[XP Discovery] ' + firstStudentName + ' > ' + subj + ' keys:', keys);
+                for (var k in facts[subj]) {
+                    if (k !== 'activityMetrics' && k !== 'timeSpentMetrics') {
+                        console.log('[XP Discovery] EXTRA: ' + subj + '.' + k + ' =', JSON.stringify(facts[subj][k]).substring(0, 500));
+                    }
+                }
+                // Also log all activityMetrics keys
+                var am = facts[subj].activityMetrics || {};
+                console.log('[XP Discovery] ' + subj + ' activityMetrics keys:', Object.keys(am));
+            }
+        }).catch(function(e) { console.log('[XP Discovery] Activity check error:', e); });
 
-            console.log('%c[XP Tracker Discovery] Probing assessment endpoints for student: ' + firstStudentId, 'color: #eab308; font-weight: bold;');
+        // 2. Probe assessment endpoints
+        var endpoints = [
+            'src_features_assessment-results_actions_getUserPendingAssessments_ts--getUserPendingAssessments_createServerFn_handler',
+            'src_features_assessment-results_actions_getUserAssessmentResults_ts--getUserAssessmentResults_createServerFn_handler',
+            'src_features_assessment-results_actions_getAssessmentResults_ts--getAssessmentResults_createServerFn_handler',
+            'src_features_assessment-results_actions_getUserAssessments_ts--getUserAssessments_createServerFn_handler',
+            'src_features_assessment-results_actions_getStudentAssessmentResults_ts--getStudentAssessmentResults_createServerFn_handler',
+        ];
 
-            endpointGuesses.forEach(function(endpoint) {
-                payloadGuesses.forEach(function(payload, pi) {
-                    if (pi > 0) return; // only try first payload per endpoint to avoid spam
-                    originalFetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                    }).then(function(resp) {
-                        if (resp.ok) {
-                            return resp.json().then(function(data) {
-                                console.log('%c[XP Tracker Discovery] SUCCESS - Endpoint found!', 'color: #22c55e; font-weight: bold; font-size: 14px;');
-                                console.log('  Endpoint:', endpoint);
-                                console.log('  Payload:', payload);
+        var payloads = [
+            { data: { studentId: firstStudentId }, context: {} },
+            { data: { userId: firstStudentId }, context: {} },
+            { data: { studentId: firstStudentId, timezone: 'America/Los_Angeles' }, context: {} },
+        ];
+
+        var found = false;
+        endpoints.forEach(function(ep) {
+            payloads.forEach(function(payload) {
+                fetch('/_serverFn/' + ep + '?createServerFn', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                }).then(function(resp) {
+                    if (resp.ok) {
+                        return resp.json().then(function(data) {
+                            if (!found) {
+                                found = true;
+                                var shortName = ep.split('--')[1] ? ep.split('--')[1].split('_')[0] : ep;
+                                console.log('%c[XP Discovery] ASSESSMENT ENDPOINT FOUND: ' + shortName, 'color: #22c55e; font-weight: bold; font-size: 14px;');
+                                console.log('  Full endpoint:', ep);
+                                console.log('  Payload:', JSON.stringify(payload));
                                 console.log('  Response:', data);
-                            });
-                        } else {
-                            console.log('[XP Tracker Discovery] ' + resp.status + ' from:', endpoint.split('--')[1]?.split('_')[0] || endpoint);
-                        }
-                    }).catch(function(e) {
-                        console.log('[XP Tracker Discovery] Failed:', endpoint.split('--')[1]?.split('_')[0] || endpoint, e.message);
-                    });
-                });
+                                // Store for later use
+                                localStorage.setItem('tb-dash-assessment-endpoint', ep);
+                                localStorage.setItem('tb-dash-assessment-payload-key', payload.data.studentId ? 'studentId' : 'userId');
+                            }
+                        });
+                    }
+                }).catch(function() {});
             });
-        }
+        });
+
+        // 3. Probe course-progress endpoints (might have activity type breakdown)
+        var courseEndpoints = [
+            'src_features_course-progress_api_batchClient_ts--batchFetchCourses_createServerFn_handler',
+            'src_features_course-progress_api_batchClient_ts--batchFetchCoursesProgress_createServerFn_handler',
+            'src_features_course-progress_api_client_ts--fetchCourseProgress_createServerFn_handler',
+        ];
+        courseEndpoints.forEach(function(ep) {
+            payloads.forEach(function(payload) {
+                fetch('/_serverFn/' + ep + '?createServerFn', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                }).then(function(resp) {
+                    if (resp.ok) {
+                        return resp.json().then(function(data) {
+                            var shortName = ep.split('--')[1] ? ep.split('--')[1].split('_')[0] : ep;
+                            console.log('%c[XP Discovery] COURSE ENDPOINT FOUND: ' + shortName, 'color: #3b82f6; font-weight: bold;');
+                            console.log('  Response:', JSON.stringify(data).substring(0, 1000));
+                        });
+                    }
+                }).catch(function() {});
+            });
+        });
     })();
 
 })();
