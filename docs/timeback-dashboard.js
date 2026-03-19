@@ -585,7 +585,7 @@
             <div class="topbar">
                 <div class="topbar-left">
                     <div class="logo">TB</div>
-                    <span class="app-title">TimeBack XP Tracking</span>
+                    <span class="app-title">TimeBack XP Quick View</span>
                 </div>
                 <div class="topbar-right">
                     <span class="timestamp" id="timestamp"></span>
@@ -621,7 +621,7 @@
             <div class="main" id="mainContent">
                 <div class="empty-state" id="emptyState">
                     <div class="empty-icon">&#9685;</div>
-                    <div class="empty-title" id="emptyTitle">Welcome to TimeBack XP Tracking</div>
+                    <div class="empty-title" id="emptyTitle">Welcome to TimeBack XP Quick View</div>
                     <div id="emptyMessage">Checking connection...</div>
                 </div>
             </div>
