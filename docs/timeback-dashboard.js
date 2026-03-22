@@ -707,8 +707,32 @@
     function saveGroupsToStorage(g) { localStorage.setItem(STORAGE_PREFIX + 'groups', JSON.stringify(g)); }
     function getStudentIds() { return JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'student-ids') || '{}'); }
     function saveStudentIds(ids) { localStorage.setItem(STORAGE_PREFIX + 'student-ids', JSON.stringify(ids)); }
-    function getCachedDay(dateStr) { return JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'cache-' + dateStr) || 'null'); }
-    function saveCachedDay(dateStr, data) { localStorage.setItem(STORAGE_PREFIX + 'cache-' + dateStr, JSON.stringify(data)); }
+    function getCachedDay(dateStr) {
+        var raw = localStorage.getItem(STORAGE_PREFIX + 'cache-' + dateStr);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        // New format stores { _fetchedAt, students }; old format is just an array
+        if (parsed && parsed._fetchedAt) return parsed;
+        // Legacy: wrap old format
+        return { students: parsed, _fetchedAt: 0 };
+    }
+    function saveCachedDay(dateStr, data) {
+        localStorage.setItem(STORAGE_PREFIX + 'cache-' + dateStr, JSON.stringify({
+            students: data,
+            _fetchedAt: Date.now(),
+        }));
+    }
+    function isCacheFresh(dateStr, cacheEntry) {
+        // Cache is only trustworthy if data was fetched AFTER the day ended.
+        // "Day ended" = midnight Pacific at the end of that date.
+        if (!cacheEntry || !cacheEntry._fetchedAt) return false;
+        var offset = getPacificOffsetHours(dateStr);
+        // End of the day in UTC: next day at offset:00 UTC
+        var nextDay = new Date(dateStr + 'T00:00:00');
+        nextDay.setDate(nextDay.getDate() + 1);
+        var dayEndUtc = new Date(nextDay.getFullYear() + '-' + String(nextDay.getMonth() + 1).padStart(2, '0') + '-' + String(nextDay.getDate()).padStart(2, '0') + 'T' + String(offset).padStart(2, '0') + ':00:00.000Z');
+        return cacheEntry._fetchedAt > dayEndUtc.getTime();
+    }
     function getLastData() { return JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'last-data') || 'null'); }
     function saveLastData(d) { localStorage.setItem(STORAGE_PREFIX + 'last-data', JSON.stringify(d)); }
 
@@ -872,13 +896,14 @@
         var studentList = getStudentsFromStorage();
         if (!studentList.length) return { error: 'no_students', message: 'Add students first.' };
         var today = getLocalToday();
-        var yesterday = getYesterday();
         dateStr = dateStr || today;
-        // Always fetch fresh for today and yesterday (yesterday's data may have been
-        // cached mid-day before students finished working)
-        if (dateStr !== today && dateStr !== yesterday) {
-            var cached = getCachedDay(dateStr);
-            if (cached) return { students: cached, date: dateStr, timestamp: new Date().toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }), from_cache: true };
+        // Use cache only if data was fetched AFTER that day ended
+        // This prevents stale mid-day caches (e.g. pulled Friday at 2pm, missing evening work)
+        if (dateStr !== today) {
+            var cacheEntry = getCachedDay(dateStr);
+            if (cacheEntry && isCacheFresh(dateStr, cacheEntry)) {
+                return { students: cacheEntry.students, date: dateStr, timestamp: new Date().toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }), from_cache: true };
+            }
         }
         var processed = await fetchDayViaApi(dateStr);
         if (!processed.length) return { error: 'no_data', message: 'No data returned. Make sure you are logged into TimeBack.' };
@@ -904,16 +929,15 @@
             current.setDate(current.getDate() + 1);
         }
         if (!dates.length) return { error: 'no_dates', message: 'No weekdays in the selected range.' };
-        var yesterday = getYesterday();
         var days = [];
         var datesToFetch = [];
         for (var di = 0; di < dates.length; di++) {
             var ds = dates[di];
-            // Always re-fetch today and yesterday; use cache for older dates
-            if (ds !== today && ds !== yesterday) {
-                var cached = getCachedDay(ds);
-                if (cached) {
-                    days.push({ date: ds, day_name: new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }), students: cached });
+            // Use cache only if data was fetched AFTER that day ended
+            if (ds !== today) {
+                var cacheEntry = getCachedDay(ds);
+                if (cacheEntry && isCacheFresh(ds, cacheEntry)) {
+                    days.push({ date: ds, day_name: new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' }), students: cacheEntry.students });
                     continue;
                 }
             }

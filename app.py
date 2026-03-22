@@ -60,6 +60,22 @@ def get_cached_day(date_str):
     return None
 
 
+def is_cache_fresh(date_str):
+    """Check if cached data for a date was fetched AFTER that day ended.
+    Prevents stale mid-day caches from being served."""
+    cache_file = CACHE_DIR / f"{date_str}.json"
+    if not cache_file.exists():
+        return False
+    # When was the cache file last written?
+    import os
+    cache_mtime = os.path.getmtime(cache_file)
+    # When did the day end? (midnight Pacific at end of date)
+    offset = get_pacific_offset(date_str)
+    dt = datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=1)
+    day_end_utc = dt.replace(hour=offset, minute=0, second=0)
+    return cache_mtime > day_end_utc.timestamp()
+
+
 def get_cached_day_complete(date_str, cookies=None):
     """Return cached data for a date, backfilling missing or empty students via API.
     Returns None only if no cache exists at all."""
@@ -351,13 +367,12 @@ def scrape_single_api(date_str=None):
 
     date_str = date_str or datetime.now().strftime("%Y-%m-%d")
     today = datetime.now().strftime("%Y-%m-%d")
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
     cookies = get_auth_cookies()
 
-    # Always re-fetch today and yesterday (yesterday's cache may be stale
-    # if it was pulled mid-day before students finished working)
-    if date_str != today and date_str != yesterday:
+    # Use cache only if data was fetched AFTER that day ended.
+    # Prevents stale mid-day caches (e.g. pulled Friday at 2pm, missing evening work)
+    if date_str != today and is_cache_fresh(date_str):
         cached = get_cached_day_complete(date_str, cookies)
         if cached:
             logger.info(f"Cache hit for {date_str}")
@@ -398,7 +413,6 @@ def scrape_range_api(start_date, end_date, weekdays_only=True):
     start = datetime.strptime(start_date, "%Y-%m-%d")
     end = datetime.strptime(end_date, "%Y-%m-%d")
     today = datetime.now().strftime("%Y-%m-%d")
-    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
     dates = []
     current = start
@@ -412,13 +426,12 @@ def scrape_range_api(start_date, end_date, weekdays_only=True):
 
     cookies = get_auth_cookies()
 
-    # Split into cached vs needs-fetching
-    # Always re-fetch today and yesterday (yesterday may have stale mid-day cache)
+    # Use cache only if data was fetched AFTER that day ended
     days = []
     dates_to_fetch = []
 
     for date_str in dates:
-        if date_str != today and date_str != yesterday:
+        if date_str != today and is_cache_fresh(date_str):
             cached = get_cached_day_complete(date_str, cookies)
             if cached:
                 logger.info(f"Cache hit for {date_str}")
