@@ -272,6 +272,12 @@
             padding: 10px 14px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.03);
         }
         #tb-dash-overlay .subject-totals-table tr:last-child td { border-bottom: none; }
+        #tb-dash-overlay .subject-totals-table tbody tr:hover td {
+            background: rgba(59, 130, 246, 0.08);
+        }
+        #tb-dash-overlay .subject-totals-table tbody tr:hover .student-name-cell {
+            background: rgba(59, 130, 246, 0.08);
+        }
         #tb-dash-overlay .subject-totals-table .student-name-cell {
             font-weight: 600; color: var(--text-primary); white-space: nowrap;
             position: sticky; left: 0; background: var(--bg-card); z-index: 1;
@@ -1040,7 +1046,7 @@
     var groups = [];
     var activeGroupIndex = -1;
     var activeDayIndex = 0;
-    var weeklyViewMode = 'daily'; // 'daily', 'subjects', or 'export'
+    var weeklyViewMode = 'daily'; // 'daily' or 'summary'
     var sortColumn = null; // { col: 'name'|subject name|'total'|'acc'|'min', dir: 'asc'|'desc' }
 
     var todayDate = new Date();
@@ -1146,17 +1152,12 @@
         // View toggle buttons
         html += '<div class="view-toggle-bar">' +
             '<button class="view-toggle-btn ' + (weeklyViewMode === 'daily' ? 'active' : '') + '" onclick="switchWeeklyView(\'daily\')">Daily Breakdown</button>' +
-            '<button class="view-toggle-btn ' + (weeklyViewMode === 'subjects' ? 'active' : '') + '" onclick="switchWeeklyView(\'subjects\')">Weekly XP by Subject</button>' +
-            '<button class="view-toggle-btn ' + (weeklyViewMode === 'export' ? 'active' : '') + '" onclick="switchWeeklyView(\'export\')">Export to Sheets</button>' +
+            '<button class="view-toggle-btn ' + (weeklyViewMode === 'summary' ? 'active' : '') + '" onclick="switchWeeklyView(\'summary\')">Weekly Summary</button>' +
             '</div>';
 
-        if (weeklyViewMode === 'export') {
-            html += '<div class="section-header">Daily Subject XP Breakdown <span class="section-date">' + rangeLabel + '</span></div>';
+        if (weeklyViewMode === 'summary') {
+            html += '<div class="section-header">Weekly Summary <span class="section-date">' + rangeLabel + '</span></div>';
             html += renderWeeklyExport(filteredDays);
-        } else if (weeklyViewMode === 'subjects') {
-            // Subject totals view
-            html += '<div class="section-header">Weekly XP by Subject <span class="section-date">' + rangeLabel + '</span></div>';
-            html += renderWeeklySubjectTotals(filteredDays);
             html += '<div class="section-header">Weekly XP Leaderboard <span class="section-date">' + rangeLabel + '</span></div>';
             html += renderWeeklyLeaderboard(filteredDays);
             html += renderWeeklyTrends(filteredDays);
